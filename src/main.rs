@@ -1,3 +1,5 @@
+mod linear_model;
+
 use std::fs;
 use rand::seq::SliceRandom;
 use std::error::Error;
@@ -72,6 +74,8 @@ fn train_model(train_data: &[(Array<f32, Ix1>, usize)], num_classes: usize) -> A
     let targets: Vec<usize> = train_data.iter().map(|(_, y)| *y).collect();
 
     let num_samples = inputs.len();
+    let num_samples = num_samples as f32;
+
     let num_features = inputs[0].len();
 
     // Convertir les étiquettes en encodage one-hot
@@ -115,7 +119,7 @@ fn train_model(train_data: &[(Array<f32, Ix1>, usize)], num_classes: usize) -> A
     weights
 }
 
-fn test_model(test_data: &[(Array<f32, Dim<[usize; 1]>> , usize)], weights: &Array<f32, Dim<[usize; 2]>>, num_classes: usize) -> f32 {
+fn test_model(test_data: &&[(Vec<Vec<u16>>, usize)], weights: &Array<f32, Dim<[usize; 2]>>, num_classes: usize) -> f32 {
     let mut num_correct = 0;
 
     for (input, label) in test_data {
@@ -139,6 +143,19 @@ fn test_model(test_data: &[(Array<f32, Dim<[usize; 1]>> , usize)], weights: &Arr
     let accuracy = num_correct as f32 / test_data.len() as f32;
     accuracy
 }
+//ecrit une fonction de learning_rate
+ fn learning_rate(learning_rate: f32, num_iterations: i32) -> f32 {
+    let mut learning_rate = learning_rate;
+    if num_iterations > 1000 {
+        learning_rate = 0.001;
+    }
+    if num_iterations > 2000 {
+        learning_rate = 0.0001;
+    }
+    learning_rate
+}
+
+
 
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -179,5 +196,83 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("{}",zipped_data.len());
 
 
+    // Nombre de classes
+    let num_classes = 3;
+
+    // Nombre de features
+let num_features = train_data[0].0.len();
+
+    // Initialiser les poids aléatoirement
+    let mut rng = rand::thread_rng();
+    let mut weights = Array::random((num_features, num_classes), Uniform::new(-1.0, 1.0));
+
+    // Nombre d'itérations d'entraînement
+    let num_iterations = 1000;
+
+    // Taux d'apprentissage
+    let learning_rate = 0.01;
+
+    // Déclaration de la variable `inputs` et extraction des caractéristiques
+    let inputs: Vec<Array<f32, Ix1>> = train_data.iter().map(|(x, _)| x.clone()).collect();
+    let targets: Vec<usize> = train_data.iter().map(|(_, y)| *y).collect();
+    // Convertir les étiquettes en encodage one-hot
+    let encoded_targets = one_hot_encode(&targets, num_classes);
+
+    // Boucle d'entraînement
+
+
+    for _ in 0..num_iterations {
+        // Calculer les prédictions
+        let predictions = inputs.iter().map(|x| x.dot(&weights)).collect::<Vec<_>>();
+
+        // Calculer l'erreur
+
+        let errors = predictions
+            .iter()
+            .zip(&encoded_targets)
+            .map(|(predicted, target)| predicted.to_owned() - target.to_owned())
+            .collect::<Vec<_>>();
+
+        // Calculer les gradients
+        let gradients = inputs
+            .iter()
+            .zip(&errors)
+            .map(|(x, error)| x.to_owned() * error)
+            .collect::<Vec<_>>();
+
+        // Mettre à jour les poids
+        for (weight, gradient) in weights.iter_mut().zip(gradients.iter()) {
+            *weight -= gradient.sum() * learning_rate / inputs.len() as f32;
+        }
+
+
+    }
+
+    // Tester le modèle
+    let accuracy = test_model(&test_data, &weights, num_classes);
+    println!("Accuracy: {:.2}%", accuracy * 100.0);
+
+    Ok(()) ;
+
     std::process::exit(0);
+
 }
+
+
+
+
+
+ /*
+
+fn main() -> Result<(), Box<dyn Error>> {
+   //implemente un modele linéaire grace aux fonctions ci-dessus
+
+    let happy_folder = "C:\\Users\\Sarah\\OneDrive\\Bureau\\Projet-Annuel-master_officiel\\dataset\\heureux";
+    let sad_folder = "C:\\Users\\Sarah\\OneDrive\\Bureau\\Projet-Annuel-master_officiel\\dataset\\Triste";
+    let engry_folder = "C:\\Users\\Sarah\\OneDrive\\Bureau\\Projet-Annuel-master_officiel\\dataset\\colere";
+
+    // Charger les images
+
+}
+
+  */
