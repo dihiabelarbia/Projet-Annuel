@@ -1,4 +1,4 @@
-se std::fs;
+use std::fs;
 use rand::seq::SliceRandom;
 use std::error::Error;
 use rand::distributions::Uniform;
@@ -140,50 +140,44 @@ fn test_model(test_data: &[(Array<f32, Dim<[usize; 1]>> , usize)], weights: &Arr
     accuracy
 }
 
-fn main() {
-    // Définir les chemins des dossiers contenant les images
-    let happy_folder = "C:\\Users\\dbelarbia\\pa\\dataset\\happy";
-    let sad_folder = "C:\\Users\\dbelarbia\\pa\\dataset\\sad";
-    let engry_folder = "C:\\Users\\dbelarbia\\pa\\dataset\\engry";
 
+fn main() -> Result<(), Box<dyn Error>> {
+
+    // Les chemins des dossiers contenant les images pour chaque classe
+    let happy_folder = "C:\\Users\\Sarah\\OneDrive\\Bureau\\Projet-Annuel-master_officiel\\dataset\\heureux";
+    let sad_folder = "C:\\Users\\Sarah\\OneDrive\\Bureau\\Projet-Annuel-master_officiel\\dataset\\Triste";
+    let engry_folder = "C:\\Users\\Sarah\\OneDrive\\Bureau\\Projet-Annuel-master_officiel\\dataset\\colere";
+
+    println!("{}", "here");
     // Charger les images
     let happy_images = load_images(&happy_folder);
     let sad_images = load_images(&sad_folder);
     let engry_images = load_images(&engry_folder);
 
-    // Fusionner les images des différentes classes
+    println!("{}", "here");
+    // Fusionner les images des deux classes
     let mut images = happy_images.clone();
     images.extend_from_slice(&sad_images);
     images.extend_from_slice(&engry_images);
 
-    // Créer les étiquettes pour les images (0 pour les images heureuses, 1 pour les images tristes, 2 pour les images en colère)
+    // Créer les étiquettes pour les images (0 pour les images heureuses et 1 pour les images tristes)
     let mut labels = vec![0; happy_images.len()];
     let mut sad_labels = vec![1; sad_images.len()];
     let mut engry_labels = vec![2; engry_images.len()];
     labels.append(&mut sad_labels);
     labels.append(&mut engry_labels);
 
-    // Combinez les images et les étiquettes dans une seule structure de données
-    let data: Vec<(Array<f32, Dim<[usize; 1]>>, usize)> = images
-        .into_iter()
-        .zip(labels.into_iter())
-        .map(|(image, label)| (flatten_images(image), label))
-        .collect();
+    println!("{}", "here");
+    // Mélanger les images et les étiquettes
+    let mut zipped_data = images.into_iter().zip(labels.into_iter()).collect::<Vec<_>>();
+    zipped_data.shuffle(&mut rand::thread_rng());
 
-    // Diviser les données en ensembles d'entraînement et de test
-    let (train_data, test_data) = data.split_at((data.len() * 0.8) as usize);
+    // Diviser les données en ensemble d'entraînement et ensemble de test (80% pour l'entraînement, 20% pour le test)
+    let test_size = (zipped_data.len() as f32 * 0.2) as usize;
+    let train_size = (zipped_data.len() as f32 * 0.8) as usize;
+    let (train_data, test_data) = zipped_data.split_at(train_size);
+    println!("{}",zipped_data.len());
 
-    // Définir les paramètres du modèle
-    let num_classes = 3;
-    let num_features = train_data[0].0.len();
-    let learning_rate = 0.01;
-    let num_epochs = 1000;
 
-    // Entraîner le modèle
-    let weights = train_model(&train_data, num_classes);
-
-    // Tester le modèle
-    let accuracy = test_model(&test_data, &weights, num_classes);
-
-    println!("Accuracy: {:.2}%", accuracy * 100.0);
+    std::process::exit(0);
 }
