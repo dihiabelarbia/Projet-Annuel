@@ -122,8 +122,9 @@ fn train_model(train_data: &[(Array<f32, Ix1>, usize)], num_classes: usize) -> A
 fn test_model(test_data: &&[(Vec<Vec<u16>>, usize)], weights: &Array<f32, Dim<[usize; 2]>>, num_classes: usize) -> f32 {
     let mut num_correct = 0;
 
-    for (input, label) in test_data {
-        let prediction = input.dot(weights);
+    for (input, label) in test_data.iter() {
+
+        let predictions = inputs .iter() .map(|x| { let flattened_x = x.into_shape((x.len(),)).unwrap(); flattened_x.dot(&weights.view()) }) .collect::<Vec<_>>();
 
         // Recherche de l'indice de la classe prédite avec la plus haute valeur
         let mut predicted_class = 0;
@@ -143,6 +144,7 @@ fn test_model(test_data: &&[(Vec<Vec<u16>>, usize)], weights: &Array<f32, Dim<[u
     let accuracy = num_correct as f32 / test_data.len() as f32;
     accuracy
 }
+/*
 //ecrit une fonction de learning_rate
  fn learning_rate(learning_rate: f32, num_iterations: i32) -> f32 {
     let mut learning_rate = learning_rate;
@@ -155,7 +157,7 @@ fn test_model(test_data: &&[(Vec<Vec<u16>>, usize)], weights: &Array<f32, Dim<[u
     learning_rate
 }
 
-
+*/
 
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -195,7 +197,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let (train_data, test_data) = zipped_data.split_at(train_size);
     println!("{}",zipped_data.len());
 
-
+/*
     // Nombre de classes
     let num_classes = 3;
 
@@ -255,14 +257,14 @@ let num_features = train_data[0].0.len();
     Ok(()) ;
 
     std::process::exit(0);
-
+ /*
 }
 
 
 
 
 
- /*
+
 
 fn main() -> Result<(), Box<dyn Error>> {
    //implemente un modele linéaire grace aux fonctions ci-dessus
