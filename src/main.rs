@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 extern crate image;
 // une bibliothèque pour le traitement d'images
 extern crate imageproc;
@@ -26,42 +25,6 @@ fn load_images_from_folder(folder_path: &str) -> Vec<DynamicImage> {
         let path = entry.path();
         let image = image::open(path).unwrap();
         images.push(image);
-=======
-mod linear_model;
-
-use std::fs;
-use rand::seq::SliceRandom;
-use std::error::Error;
-use rand::distributions::Uniform;
-use ndarray::{Array1, Array2, Axis, Dim, Ix, Ix1, s};
-use rand::thread_rng;
-use ndarray_rand::RandomExt;
-use ndarray::{Array, ArrayBase, Data, Ix2, OwnedRepr};
-use ndarray::prelude::*;
-use rulinalg::utils;
-
-fn load_images(folder: &str) -> Vec<Vec<Vec<u16>>> {
-    // Créer un vecteur pour stocker les images
-    let mut images = Vec::new();
-
-    // Créer un vecteur intermédiaire pour stocker les images d'une même classe
-    let mut class_images = Vec::new();
-
-    // Parcourir le dossier contenant les images
-    for entry in fs::read_dir(folder).unwrap() {
-        let file_path = entry.unwrap().path();
-        // Vérifier que le fichier est une image
-        if let Some(extension) = file_path.extension() {
-            if extension == "jpg" || extension == "png" || extension == "jpeg" {
-                // Charger l'image et la convertir en RGB16
-                let image = image::open(file_path).unwrap().into_rgb16();
-                // Récupérer les données de l'image sous forme de vecteur d'entiers non signés 16 bits
-                let image_data = image.into_raw();
-                // Ajouter les données de l'image au vecteur intermédiaire
-                class_images.push(image_data);
-            }
-        }
->>>>>>> a561600b0536331c83bfc6652bb6f988ec3b56a6
     }
     images
 }
@@ -81,7 +44,6 @@ fn resize_images(images: Vec<DynamicImage>, width: u32, height: u32) -> Vec<Dyna
     resized_images
 }
 
-<<<<<<< HEAD
 // Fonction pour convertir les images en vecteurs de pixels
 fn flatten_images(images: Vec<DynamicImage>) -> Vec<Vec<f32>> {
     let mut flattened_images: Vec<Vec<f32>> = Vec::new();
@@ -99,17 +61,6 @@ fn flatten_images(images: Vec<DynamicImage>) -> Vec<Vec<f32>> {
                 flattened_image.push(pixel[2] as f32 / 255.0);
             }
         }
-=======
-fn train_model(train_data: &[(Array<f32, Ix1>, usize)], num_classes: usize) -> Array2<f32> {
-    // Extraire les caractéristiques (entrées) et les étiquettes (cibles) à partir des données d'entraînement
-    let inputs: Vec<Array<f32, Ix1>> = train_data.iter().map(|(x, _)| x.clone()).collect();
-    let targets: Vec<usize> = train_data.iter().map(|(_, y)| *y).collect();
-
-    let num_samples = inputs.len();
-    let num_samples = num_samples as f32;
-
-    let num_features = inputs[0].len();
->>>>>>> a561600b0536331c83bfc6652bb6f988ec3b56a6
 
         flattened_images.push(flattened_image);
     }
@@ -151,7 +102,6 @@ fn predict_image_class(image: &[f32], weights: &[Vec<f32>]) -> usize {
         }
     }
 
-<<<<<<< HEAD
     predicted_class
 }
 
@@ -166,14 +116,6 @@ fn train_model(
 ) {
     let num_samples = images.len();
     let num_features = images[0].len();
-=======
-fn test_model(test_data: &&[(Vec<Vec<u16>>, usize)], weights: &Array<f32, Dim<[usize; 2]>>, num_classes: usize) -> f32 {
-    let mut num_correct = 0;
-
-    for (input, label) in test_data.iter() {
-
-        let predictions = inputs .iter() .map(|x| { let flattened_x = x.into_shape((x.len(),)).unwrap(); flattened_x.dot(&weights.view()) }) .collect::<Vec<_>>();
->>>>>>> a561600b0536331c83bfc6652bb6f988ec3b56a6
 
     for _ in 0..num_iterations {
         for (image, label) in images.iter().zip(labels.iter()) {
@@ -207,25 +149,7 @@ fn test_model(images: &[Vec<f32>], weights: &[Vec<f32>], num_classes: usize) -> 
     let accuracy = correct_predictions as f32 / images.len() as f32 * 100.0;
     accuracy
 }
-/*
-//ecrit une fonction de learning_rate
- fn learning_rate(learning_rate: f32, num_iterations: i32) -> f32 {
-    let mut learning_rate = learning_rate;
-    if num_iterations > 1000 {
-        learning_rate = 0.001;
-    }
-    if num_iterations > 2000 {
-        learning_rate = 0.0001;
-    }
-    learning_rate
-}
 
-*/
-
-
-fn main() -> Result<(), Box<dyn Error>> {
-
-<<<<<<< HEAD
 
 // Fonction principale
 fn main() {
@@ -286,124 +210,4 @@ fn main() {
     println!("Précision du modèle: {}%", accuracy);
     println!("Temps d'exécution: {:?}", execution_time);
     println!("Classe prédite: {}", predicted_class);
-=======
-    // Les chemins des dossiers contenant les images pour chaque classe
-    let happy_folder = "C:\\Users\\Sarah\\OneDrive\\Bureau\\Projet-Annuel-master_officiel\\dataset\\heureux";
-    let sad_folder = "C:\\Users\\Sarah\\OneDrive\\Bureau\\Projet-Annuel-master_officiel\\dataset\\Triste";
-    let engry_folder = "C:\\Users\\Sarah\\OneDrive\\Bureau\\Projet-Annuel-master_officiel\\dataset\\colere";
-
-    println!("{}", "here");
-    // Charger les images
-    let happy_images = load_images(&happy_folder);
-    let sad_images = load_images(&sad_folder);
-    let engry_images = load_images(&engry_folder);
-
-    println!("{}", "here");
-    // Fusionner les images des deux classes
-    let mut images = happy_images.clone();
-    images.extend_from_slice(&sad_images);
-    images.extend_from_slice(&engry_images);
-
-    // Créer les étiquettes pour les images (0 pour les images heureuses et 1 pour les images tristes)
-    let mut labels = vec![0; happy_images.len()];
-    let mut sad_labels = vec![1; sad_images.len()];
-    let mut engry_labels = vec![2; engry_images.len()];
-    labels.append(&mut sad_labels);
-    labels.append(&mut engry_labels);
-
-    println!("{}", "here");
-    // Mélanger les images et les étiquettes
-    let mut zipped_data = images.into_iter().zip(labels.into_iter()).collect::<Vec<_>>();
-    zipped_data.shuffle(&mut rand::thread_rng());
-
-    // Diviser les données en ensemble d'entraînement et ensemble de test (80% pour l'entraînement, 20% pour le test)
-    let test_size = (zipped_data.len() as f32 * 0.2) as usize;
-    let train_size = (zipped_data.len() as f32 * 0.8) as usize;
-    let (train_data, test_data) = zipped_data.split_at(train_size);
-    println!("{}",zipped_data.len());
-
-/*
-    // Nombre de classes
-    let num_classes = 3;
-
-    // Nombre de features
-let num_features = train_data[0].0.len();
-
-    // Initialiser les poids aléatoirement
-    let mut rng = rand::thread_rng();
-    let mut weights = Array::random((num_features, num_classes), Uniform::new(-1.0, 1.0));
-
-    // Nombre d'itérations d'entraînement
-    let num_iterations = 1000;
-
-    // Taux d'apprentissage
-    let learning_rate = 0.01;
-
-    // Déclaration de la variable `inputs` et extraction des caractéristiques
-    let inputs: Vec<Array<f32, Ix1>> = train_data.iter().map(|(x, _)| x.clone()).collect();
-    let targets: Vec<usize> = train_data.iter().map(|(_, y)| *y).collect();
-    // Convertir les étiquettes en encodage one-hot
-    let encoded_targets = one_hot_encode(&targets, num_classes);
-
-    // Boucle d'entraînement
-
-
-    for _ in 0..num_iterations {
-        // Calculer les prédictions
-        let predictions = inputs.iter().map(|x| x.dot(&weights)).collect::<Vec<_>>();
-
-        // Calculer l'erreur
-
-        let errors = predictions
-            .iter()
-            .zip(&encoded_targets)
-            .map(|(predicted, target)| predicted.to_owned() - target.to_owned())
-            .collect::<Vec<_>>();
-
-        // Calculer les gradients
-        let gradients = inputs
-            .iter()
-            .zip(&errors)
-            .map(|(x, error)| x.to_owned() * error)
-            .collect::<Vec<_>>();
-
-        // Mettre à jour les poids
-        for (weight, gradient) in weights.iter_mut().zip(gradients.iter()) {
-            *weight -= gradient.sum() * learning_rate / inputs.len() as f32;
-        }
-
-
-    }
-
-    // Tester le modèle
-    let accuracy = test_model(&test_data, &weights, num_classes);
-    println!("Accuracy: {:.2}%", accuracy * 100.0);
-
-    Ok(()) ;
-
-    std::process::exit(0);
- /*
->>>>>>> a561600b0536331c83bfc6652bb6f988ec3b56a6
 }
-
-
-
-<<<<<<< HEAD
-=======
-
-
-
-
-fn main() -> Result<(), Box<dyn Error>> {
-   //implemente un modele linéaire grace aux fonctions ci-dessus
-
-    let happy_folder = "C:\\Users\\Sarah\\OneDrive\\Bureau\\Projet-Annuel-master_officiel\\dataset\\heureux";
-    let sad_folder = "C:\\Users\\Sarah\\OneDrive\\Bureau\\Projet-Annuel-master_officiel\\dataset\\Triste";
-    let engry_folder = "C:\\Users\\Sarah\\OneDrive\\Bureau\\Projet-Annuel-master_officiel\\dataset\\colere";
-
-    // Charger les images
-
-}
-
-  */
->>>>>>> a561600b0536331c83bfc6652bb6f988ec3b56a6
