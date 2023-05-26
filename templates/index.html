@@ -157,7 +157,9 @@ margin: auto;
 		<canvas id="canvas" style ="display: none;"></canvas>
 	</div>
 
+
 	<!-- Script pour la capture photo -->
+<form action="/resultat" method="post">  {% csrf_token %}
 	<script>
 		const video = document.createElement('video');
 		const canvas = document.getElementById('canvas');
@@ -173,10 +175,21 @@ margin: auto;
 		document.getElementById('start-camera').addEventListener('click', () => {
 			context.drawImage(video, 0, 0, canvas.width, canvas.height);
 			const photo = canvas.toDataURL('image/png');
+			document.getElementById('photoData').value = photo;
 			const img = document.createElement('img');
 			img.src = photo;
 			document.querySelector('.photo').appendChild(img);
 		});
+
+
 	</script>
+	<input type="hidden" id="photoData" name="photoData">
+	<input type="submit" value="Soumettre">
+
+
+</form>
+
+<div style= "margin-top:-40px; margin-left: 50px;" class="alert alert-primary" role="alert">
+	<strong>{{reponse}}</strong> </div>
 </body>
 </html>
