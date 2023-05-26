@@ -1,7 +1,12 @@
 [package]
-name = "projet_annuel_3IABD"
+name = "learning_emotions"
 version = "0.1.0"
-edition = "2021"
+edition = "2018"
+
+[lib]
+name = "learning_emotions"
+crate-type = ["cdylib"]
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -10,6 +15,7 @@ image = "0.24.0"
 rusttype = "0.9.1"
 ndarray = "0.15.6"
 rand = "0.8.4"
-plotters = "=0.3.4"
 ndarray-rand = "0.14.0"
 rulinalg = "0.4.2"
+imageproc = "0.23.0"
+indicatif = "0.17.3"

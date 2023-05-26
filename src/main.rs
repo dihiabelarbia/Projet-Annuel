@@ -1,189 +1,216 @@
-se std::fs;
-use rand::seq::SliceRandom;
-use std::error::Error;
-use rand::distributions::Uniform;
-use ndarray::{Array1, Array2, Axis, Dim, Ix, Ix1, s};
-use rand::thread_rng;
-use ndarray_rand::RandomExt;
-use ndarray::{Array, ArrayBase, Data, Ix2, OwnedRepr};
-use ndarray::prelude::*;
-use rulinalg::utils;
+extern crate image;
+// une bibliothèque pour le traitement d'images
+extern crate imageproc;
 
-fn load_images(folder: &str) -> Vec<Vec<Vec<u16>>> {
-    // Créer un vecteur pour stocker les images
-    let mut images = Vec::new();
+use image::{DynamicImage, GenericImageView, ImageBuffer, Rgb};
+use imageproc::definitions::Image;
+use std::fs;
+use std::time::Instant;
+use image::imageops::FilterType;
 
-    // Créer un vecteur intermédiaire pour stocker les images d'une même classe
-    let mut class_images = Vec::new();
+// Définition de certaines constantes qui seront utilisées dans le reste du programme
+const IMAGE_WIDTH: u32 = 150;
+const IMAGE_HEIGHT: u32 = 150;
 
-    // Parcourir le dossier contenant les images
-    for entry in fs::read_dir(folder).unwrap() {
-        let file_path = entry.unwrap().path();
-        // Vérifier que le fichier est une image
-        if let Some(extension) = file_path.extension() {
-            if extension == "jpg" || extension == "png" || extension == "jpeg" {
-                // Charger l'image et la convertir en RGB16
-                let image = image::open(file_path).unwrap().into_rgb16();
-                // Récupérer les données de l'image sous forme de vecteur d'entiers non signés 16 bits
-                let image_data = image.into_raw();
-                // Ajouter les données de l'image au vecteur intermédiaire
-                class_images.push(image_data);
-            }
-        }
+const NUM_CLASSES: usize = 3;
+const LEARNING_RATE: f32 = 0.01;
+const NUM_ITERATIONS: usize = 2;
+
+// Fonction pour charger les images d'un dossier
+fn load_images_from_folder(folder_path: &str) -> Vec<DynamicImage> {
+    let mut images: Vec<DynamicImage> = Vec::new();
+
+    for entry in fs::read_dir(folder_path).unwrap() {
+        let entry = entry.unwrap();
+        let path = entry.path();
+        let image = image::open(path).unwrap();
+        images.push(image);
     }
-
-    // Ajouter le vecteur intermédiaire au vecteur principal
-    images.push(class_images);
-
-    // Retourner le vecteur principal
     images
 }
 
-fn flatten_images(images: Vec<Array<f32, ndarray::Dim<[usize; 3]>>>) -> ArrayBase<OwnedRepr<f32>, Ix2> {
-    let num_images = images.len();
-    let image_shape = images[0].shape();
-    let num_features = image_shape[0] * image_shape[1] * image_shape[2];
-
-    let mut flattened_images = Array::zeros((num_images, num_features));
-    for (i, image) in images.into_iter().enumerate() {
-        let flattened_image = image
-            .into_shape((num_features,))
-            .expect("Failed to reshape image");
-        flattened_images.row_mut(i).assign(&flattened_image);
-    }
-    flattened_images
+fn my_add(a: i32, b: i32) -> i32 {
+    a + b
 }
+// Fonction pour redimensionner toutes les images à une taille fixe
+fn resize_images(images: Vec<DynamicImage>, width: u32, height: u32) -> Vec<DynamicImage> {
+    let mut resized_images: Vec<DynamicImage> = Vec::new();
 
-
-fn one_hot_encode(labels: &[usize], num_classes: usize) -> Array<f32, ndarray::Dim<[usize; 2]>> {
-    let num_labels = labels.len();
-    let mut encoded_labels = Array::zeros((num_labels, num_classes));
-
-    for (i, &label) in labels.iter().enumerate() {
-        encoded_labels[[i, label]] = 1.0;
+    for image in images {
+        let resized_image = image.resize_exact(width, height, FilterType::Lanczos3);
+        resized_images.push(resized_image);
     }
 
-    encoded_labels
+    resized_images
 }
 
-fn train_model(train_data: &[(Array<f32, Ix1>, usize)], num_classes: usize) -> Array2<f32> {
-    // Extraire les caractéristiques (entrées) et les étiquettes (cibles) à partir des données d'entraînement
-    let inputs: Vec<Array<f32, Ix1>> = train_data.iter().map(|(x, _)| x.clone()).collect();
-    let targets: Vec<usize> = train_data.iter().map(|(_, y)| *y).collect();
+// Fonction pour convertir les images en vecteurs de pixels
+fn flatten_images(images: Vec<DynamicImage>) -> Vec<Vec<f32>> {
+    let mut flattened_images: Vec<Vec<f32>> = Vec::new();
 
-    let num_samples = inputs.len();
-    let num_features = inputs[0].len();
+    for image in images {
+        let rgb_image = image.into_rgb8();
+        let (width, height) = rgb_image.dimensions();
 
-    // Convertir les étiquettes en encodage one-hot
-    let encoded_targets = one_hot_encode(&targets, num_classes);
-
-    // Initialiser les poids aléatoirement
-    let mut rng = rand::thread_rng();
-    let mut weights = Array::random((num_features, num_classes), Uniform::new(-1.0, 1.0));
-    // Nombre d'itérations d'entraînement
-    let num_iterations = 1000;
-
-    // Taux d'apprentissage
-    let learning_rate = 0.01;
-
-    // Boucle d'entraînement
-    for _ in 0..num_iterations {
-        // Calculer les prédictions
-        let predictions = inputs.iter().map(|x| x.dot(&weights)).collect::<Vec<_>>();
-
-        // Calculer l'erreur
-        let errors = predictions
-            .iter()
-            .zip(&encoded_targets)
-            .map(|(predicted, target)| predicted.to_owned() - target.to_owned())
-
-
-            .collect::<Vec<_>>();
-
-        // Calculer les gradients
-        let gradients = inputs
-            .iter()
-            .zip(&errors)
-            .map(|(x, error)| x.to_owned() * error)
-            .collect::<Vec<_>>();
-
-        // Mettre à jour les poids
-        for (weight, gradient) in weights.iter_mut().zip(gradients.iter()) {
-            *weight -= gradient.sum() * learning_rate / num_samples as f32;
-        }
-    }
-    weights
-}
-
-fn test_model(test_data: &[(Array<f32, Dim<[usize; 1]>> , usize)], weights: &Array<f32, Dim<[usize; 2]>>, num_classes: usize) -> f32 {
-    let mut num_correct = 0;
-
-    for (input, label) in test_data {
-        let prediction = input.dot(weights);
-
-        // Recherche de l'indice de la classe prédite avec la plus haute valeur
-        let mut predicted_class = 0;
-        let mut max_value = prediction[0];
-        for i in 1..num_classes {
-            if prediction[i] > max_value {
-                max_value = prediction[i];
-                predicted_class = i;
+        let mut flattened_image: Vec<f32> = Vec::new();
+        for y in 0..height {
+            for x in 0..width {
+                let pixel = rgb_image.get_pixel(x, y);
+                flattened_image.push(pixel[0] as f32 / 255.0);
+                flattened_image.push(pixel[1] as f32 / 255.0);
+                flattened_image.push(pixel[2] as f32 / 255.0);
             }
         }
 
-        if predicted_class == *label {
-            num_correct += 1;
+        flattened_images.push(flattened_image);
+    }
+
+    flattened_images
+}
+
+// Fonction pour initialiser les poids du modèle.  Cette fonction crée une matrice de poids pour le classificateur.
+// Chaque classe a un ensemble de poids associés à chaque pixel de l'image
+fn initialize_weights(num_features: usize, num_classes: usize) -> Vec<Vec<f32>> {
+    let mut weights: Vec<Vec<f32>> = Vec::new();
+
+    for _ in 0..num_classes {
+        let mut class_weights: Vec<f32> = Vec::new();
+        for _ in 0..num_features {
+            class_weights.push(0.0);
+        }
+        weights.push(class_weights);
+    }
+
+    weights
+}
+
+// Fonction pour prédire la classe d'une image, Cette fonction prend une image et les poids du classificateur, et prédit la classe de l'image.
+fn predict_image_class(image: &[f32], weights: &[Vec<f32>]) -> usize {
+    let mut max_score = std::f32::NEG_INFINITY;
+    let mut predicted_class = 0;
+
+    for (class, class_weights) in weights.iter().enumerate() {
+        let mut score = 0.0;
+
+        for (pixel, weight) in image.iter().zip(class_weights.iter()) {
+            score += pixel * weight;
+        }
+
+        if score > max_score {
+            max_score = score;
+            predicted_class = class;
         }
     }
 
-    let accuracy = num_correct as f32 / test_data.len() as f32;
+    predicted_class
+}
+
+// Fonction pour entraîner le modèle, Cette fonction entraîne le modèle de classification.
+// Elle met à jour les poids du modèle en fonction des erreurs de prédiction.
+fn train_model(
+    images: Vec<Vec<f32>>,
+    labels: Vec<usize>,
+    weights: &mut [Vec<f32>],
+    learning_rate: f32,
+    num_iterations: usize,
+) {
+    let num_samples = images.len();
+    let num_features = images[0].len();
+
+    for _ in 0..num_iterations {
+        for (image, label) in images.iter().zip(labels.iter()) {
+            let predicted_class = predict_image_class(&image, weights);
+            let true_class = *label;
+
+            if predicted_class != true_class {
+                for (pixel, weight) in image.iter().zip(weights[predicted_class].iter_mut()) {
+                    *weight -= learning_rate * pixel;
+                }
+
+                for (pixel, weight) in image.iter().zip(weights[true_class].iter_mut()) {
+                    *weight += learning_rate * pixel;
+                }
+            }
+        }
+    }
+}
+
+// Fonction pour tester le modèle
+fn test_model(images: &[Vec<f32>], weights: &[Vec<f32>], num_classes: usize) -> f32 {
+    let mut correct_predictions = 0;
+
+    for (image, label) in images.iter().zip(0..) {
+        let predicted_class = predict_image_class(image, weights);
+        if predicted_class == label % num_classes {
+            correct_predictions += 1;
+        }
+    }
+
+    let accuracy = correct_predictions as f32 / images.len() as f32 * 100.0;
     accuracy
 }
 
+
+// Fonction principale
 fn main() {
-    // Définir les chemins des dossiers contenant les images
-    let happy_folder = "C:\\Users\\dbelarbia\\pa\\dataset\\happy";
-    let sad_folder = "C:\\Users\\dbelarbia\\pa\\dataset\\sad";
-    let engry_folder = "C:\\Users\\dbelarbia\\pa\\dataset\\engry";
+    // Chargement des images pour chaque classe
+    let triste_images = load_images_from_folder("C:\\Users\\dbelarbia\\ESGI\\pa\\Projet-Annuel\\dataset\\sad");
+    let heureux_images = load_images_from_folder("C:\\Users\\dbelarbia\\ESGI\\pa\\Projet-Annuel\\dataset\\happy");
+    let enerve_images = load_images_from_folder("C:\\Users\\dbelarbia\\ESGI\\pa\\Projet-Annuel\\dataset\\engry");
 
-    // Charger les images
-    let happy_images = load_images(&happy_folder);
-    let sad_images = load_images(&sad_folder);
-    let engry_images = load_images(&engry_folder);
 
-    // Fusionner les images des différentes classes
-    let mut images = happy_images.clone();
-    images.extend_from_slice(&sad_images);
-    images.extend_from_slice(&engry_images);
+    // Redimensionnement des images
+    let triste_resized = resize_images(triste_images, IMAGE_WIDTH, IMAGE_HEIGHT);
+    let heureux_resized = resize_images(heureux_images, IMAGE_WIDTH, IMAGE_HEIGHT);
+    let enerve_resized = resize_images(enerve_images, IMAGE_WIDTH, IMAGE_HEIGHT);
 
-    // Créer les étiquettes pour les images (0 pour les images heureuses, 1 pour les images tristes, 2 pour les images en colère)
-    let mut labels = vec![0; happy_images.len()];
-    let mut sad_labels = vec![1; sad_images.len()];
-    let mut engry_labels = vec![2; engry_images.len()];
-    labels.append(&mut sad_labels);
-    labels.append(&mut engry_labels);
+    // Conversion des images en vecteurs de pixels
+    let triste_flattened = flatten_images(triste_resized);
+    let heureux_flattened = flatten_images(heureux_resized);
+    let enerve_flattened = flatten_images(enerve_resized);
 
-    // Combinez les images et les étiquettes dans une seule structure de données
-    let data: Vec<(Array<f32, Dim<[usize; 1]>>, usize)> = images
-        .into_iter()
-        .zip(labels.into_iter())
-        .map(|(image, label)| (flatten_images(image), label))
-        .collect();
+    // Création des étiquettes pour chaque classe
+    let triste_labels = vec![0; triste_flattened.len()];
+    let heureux_labels = vec![1; heureux_flattened.len()];
+    let enerve_labels = vec![2; enerve_flattened.len()];
 
-    // Diviser les données en ensembles d'entraînement et de test
-    let (train_data, test_data) = data.split_at((data.len() * 0.8) as usize);
+    // Concaténation des images et des étiquettes
+    let images: Vec<Vec<f32>> = [
+        triste_flattened,
+        heureux_flattened,
+        enerve_flattened,
+    ]
+        .concat();
+    let labels: Vec<usize> = [
+        triste_labels,
+        heureux_labels,
+        enerve_labels,
+    ]
+        .concat();
 
-    // Définir les paramètres du modèle
-    let num_classes = 3;
-    let num_features = train_data[0].0.len();
-    let learning_rate = 0.01;
-    let num_epochs = 1000;
+    // Initialisation des poids
+    let mut weights = initialize_weights(IMAGE_WIDTH as usize * IMAGE_HEIGHT as usize * 3, NUM_CLASSES);
 
-    // Entraîner le modèle
-    let weights = train_model(&train_data, num_classes);
+    // Entraînement du modèle
+    let cloned_images = images.clone();
+    train_model(cloned_images, labels, &mut weights, LEARNING_RATE, NUM_ITERATIONS);
 
-    // Tester le modèle
-    let accuracy = test_model(&test_data, &weights, num_classes);
+    // Exemple de prédiction d'une nouvelle image
+    let new_image_path = "C:\\Users\\dbelarbia\\ESGI\\pa\\Projet-Annuel\\src\\sad.jpg";
+    let new_image = image::open(new_image_path).expect("Impossible de charger la nouvelle image");
+    let new_resized_image = new_image.resize_exact(IMAGE_WIDTH, IMAGE_HEIGHT, FilterType::Lanczos3);
+    let new_flattened_image = &flatten_images(vec![new_resized_image])[0];
+    let predicted_class = predict_image_class(&new_flattened_image, &weights);
 
-    println!("Accuracy: {:.2}%", accuracy * 100.0);
+    let start_time = Instant::now();
+
+    let end_time = Instant::now();
+    let execution_time = end_time.duration_since(start_time);
+    let accuracy = test_model(&images, &weights, NUM_CLASSES);
+    println!("Précision du modèle: {}%", accuracy);
+    println!("Temps d'exécution: {:?}", execution_time);
+    println!("Classe prédite: {}", predicted_class);
 }
+
+
+
