@@ -1,3 +1,5 @@
+mod PMC;
+
 extern crate image;
 // une bibliothèque pour le traitement d'images
 extern crate imageproc;
