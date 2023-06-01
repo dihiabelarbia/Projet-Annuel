@@ -1,5 +1,6 @@
-C:\Users\Sarah\OneDrive\Bureau\PA\target\debug\deps\learning_emotions.dll: src\lib.rs
+C:\Users\Sarah\OneDrive\Bureau\PAIABD\Projet-Annuel\target\debug\deps\learning_emotions.exe: src\main.rs src\PMC.rs
 
-C:\Users\Sarah\OneDrive\Bureau\PA\target\debug\deps\learning_emotions.d: src\lib.rs
+C:\Users\Sarah\OneDrive\Bureau\PAIABD\Projet-Annuel\target\debug\deps\learning_emotions.d: src\main.rs src\PMC.rs
 
-src\lib.rs:
+src\main.rs:
+src\PMC.rs:

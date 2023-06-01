@@ -10,12 +10,14 @@ use std::fs;
 use std::time::Instant;
 use image::imageops::FilterType;
 
+
+
 // Définition de certaines constantes qui seront utilisées dans le reste du programme
 const IMAGE_WIDTH: u32 = 150;
 const IMAGE_HEIGHT: u32 = 150;
 
 const NUM_CLASSES: usize = 3;
-const LEARNING_RATE: f32 = 0.01;
+const LEARNING_RATE: f32 = 0.5;
 const NUM_ITERATIONS: usize = 2;
 
 // Fonction pour charger les images d'un dossier
@@ -156,9 +158,9 @@ fn test_model(images: &[Vec<f32>], weights: &[Vec<f32>], num_classes: usize) -> 
 // Fonction principale
 fn main() {
     // Chargement des images pour chaque classe
-    let triste_images = load_images_from_folder("C:\\Users\\dbelarbia\\ESGI\\pa\\Projet-Annuel\\dataset\\sad");
-    let heureux_images = load_images_from_folder("C:\\Users\\dbelarbia\\ESGI\\pa\\Projet-Annuel\\dataset\\happy");
-    let enerve_images = load_images_from_folder("C:\\Users\\dbelarbia\\ESGI\\pa\\Projet-Annuel\\dataset\\engry");
+    let triste_images = load_images_from_folder("C:\\Users\\Sarah\\OneDrive\\Bureau\\PAIABD\\Projet-Annuel\\dataset\\sad");
+    let heureux_images = load_images_from_folder("C:\\Users\\Sarah\\OneDrive\\Bureau\\PAIABD\\Projet-Annuel\\dataset\\happy");
+    let enerve_images = load_images_from_folder("C:\\Users\\Sarah\\OneDrive\\Bureau\\PAIABD\\Projet-Annuel\\dataset\\engry");
 
 
     // Redimensionnement des images
@@ -198,7 +200,7 @@ fn main() {
     train_model(cloned_images, labels, &mut weights, LEARNING_RATE, NUM_ITERATIONS);
 
     // Exemple de prédiction d'une nouvelle image
-    let new_image_path = "C:\\Users\\dbelarbia\\ESGI\\pa\\Projet-Annuel\\src\\sad.jpg";
+    let new_image_path = "C:\\Users\\Sarah\\OneDrive\\Bureau\\PAIABD\\Projet-Annuel\\src\\sad.jpg";
     let new_image = image::open(new_image_path).expect("Impossible de charger la nouvelle image");
     let new_resized_image = new_image.resize_exact(IMAGE_WIDTH, IMAGE_HEIGHT, FilterType::Lanczos3);
     let new_flattened_image = &flatten_images(vec![new_resized_image])[0];

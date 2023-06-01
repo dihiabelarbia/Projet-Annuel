@@ -1,251 +1,172 @@
-use image::{DynamicImage, GenericImageView};
-use std::fs;
+use ndarray::{Array2, Array3, Axis};
+use image::io::Reader as ImageReader;
+use image::GrayImage;
+use std::path::Path;
+use ndarray_rand::{RandomExt, rand_distr::Uniform};
 
-struct Neuron {
-    weights: Vec<f64>,
-    bias: f64,
-    output: f64,
-    delta: f64,
+
+// Fonction pour lire les images du dataset et les convertir en Array2<f64>
+fn read_images_from_dir(dir: &Path) -> Vec<Array2<f64>> {
+    let mut images = Vec::new();
+    for entry in dir.read_dir().expect("read_dir call failed") {
+        if let Ok(entry) = entry {
+            let img = ImageReader::open(entry.path())
+                .unwrap()
+                .decode()
+                .unwrap()
+                .into_luma8();
+            let (width, height) = img.dimensions();
+            let img = img.into_raw();
+            let img = Array2::from_shape_vec((height as usize, width as usize), img).unwrap();
+            let img = img.mapv(|x| x as f64 / 255.);
+            images.push(img);
+        }
+    }
+    images
 }
 
-struct Layer {
-    neurons: Vec<Neuron>,
+fn prepare_data(
+    triste_dir: &Path,
+    heureux_dir: &Path,
+    colere_dir: &Path,
+) -> (Array2<f64>, Array2<f64>) {
+    let triste_images = read_images_from_dir(triste_dir);
+    let heureux_images = read_images_from_dir(heureux_dir);
+    let colere_images = read_images_from_dir(colere_dir);
+
+    let n_samples = triste_images.len() + heureux_images.len() + colere_images.len();
+    let n_features = triste_images[0].len();
+
+    let mut input_data = Array2::zeros((n_samples, n_features));
+    let mut output_data = Array2::zeros((n_samples, 3));
+
+    for (i, img) in triste_images.iter().enumerate() {
+        input_data.row_mut(i).assign(&img.view().into_shape(n_features).unwrap());
+        output_data[(i, 0)] = 1.;
+    }
+
+    for (i, img) in heureux_images.iter().enumerate() {
+        input_data
+            .row_mut(i + triste_images.len())
+            .assign(&img.view().into_shape(n_features).unwrap());
+        output_data[(i + triste_images.len(), 1)] = 1.;
+    }
+
+    for (i, img) in colere_images.iter().enumerate() {
+        input_data
+            .row_mut(i + triste_images.len() + heureux_images.len())
+            .assign(&img.view().into_shape(n_features).unwrap());
+        output_data[(i + triste_images.len() + heureux_images.len(), 2)] = 1.;
+    }
+
+    (input_data, output_data)
 }
 
-struct MultiLayerPerceptron {
-    layers: Vec<Layer>,
-    learning_rate: f64,
+
+#[derive(Debug)]
+struct MLP {
+    input_size: usize,
+    hidden_size: usize,
+    output_size: usize,
+    weights1: Array2<f64>,
+    weights2: Array2<f64>,
 }
 
-impl MultiLayerPerceptron {
-    fn new(input_size: usize, hidden_sizes: Vec<usize>, output_size: usize, learning_rate: f64) -> Self {
-        let mut layers = Vec::new();
+use rand::Rng;
 
-        // Création de la couche d'entrée
-        layers.push(Layer {
-            neurons: vec![Neuron {
-                weights: vec![0.0; input_size],
-                bias: 0.0,
-                output: 0.0,
-                delta: 0.0,
-            }],
-        });
-
-        // Création des couches cachées
-        for &hidden_size in hidden_sizes.iter() {
-            let prev_layer_size = layers.last().unwrap().neurons.len();
-            let mut hidden_layer = Layer { neurons: Vec::new() };
-
-            for _ in 0..hidden_size {
-                let mut weights = Vec::new();
-                for _ in 0..prev_layer_size {
-                    weights.push(rand::random::<f64>() - 0.5);
-                }
-
-                hidden_layer.neurons.push(Neuron {
-                    weights,
-                    bias: rand::random::<f64>() - 0.5,
-                    output: 0.0,
-                    delta: 0.0,
-                });
-            }
-
-            layers.push(hidden_layer);
-        }
-
-        // Création de la couche de sortie
-        let prev_layer_size = layers.last().unwrap().neurons.len();
-        let mut output_layer = Layer { neurons: Vec::new() };
-
-        for _ in 0..output_size {
-            let mut weights = Vec::new();
-            for _ in 0..prev_layer_size {
-                weights.push(rand::random::<f64>() - 0.5);
-            }
-
-            output_layer.neurons.push(Neuron {
-                weights,
-                bias: rand::random::<f64>() - 0.5,
-                output: 0.0,
-                delta: 0.0,
-            });
-        }
-
-        layers.push(output_layer);
-
-        MultiLayerPerceptron {
-            layers,
-            learning_rate,
-        }
+fn random_array(rows: usize, cols: usize, low: f64, high: f64) -> Array2<f64> {
+    let mut rng = rand::thread_rng();
+    let mut data = Vec::with_capacity(rows * cols);
+    for _ in 0..rows * cols {
+        data.push(rng.gen_range(low..high));
     }
-
-    fn activate(&self, x: f64) -> f64 {
-        // Fonction d'activation (sigmoid)
-        1.0 / (1.0 + f64::exp(-x))
-    }
-
-    fn feed_forward(&mut self, inputs: &[f64]) {
-        // Alimentation avant (feed-forward) à travers le réseau
-        let mut prev_layer_outputs = inputs.to_vec();
-        let mut temp_outputs = Vec::new();
-
-        for layer in &mut self.layers {
-            temp_outputs.clear();
-
-            for neuron in &mut layer.neurons {
-                let mut sum = neuron.bias;
-
-                for (weight, prev_output) in neuron.weights.iter().zip(prev_layer_outputs.iter()) {
-                    sum += weight * prev_output;
-                }
-
-                temp_outputs.push(self.activate(sum));
-            }
-
-            prev_layer_outputs = temp_outputs.clone();
-            layer.neurons.iter_mut().zip(temp_outputs.iter()).for_each(|(neuron, &output)| {
-                neuron.output = output;
-            });
-        }
-    }
-
-
-    fn backpropagate(&mut self, inputs: &[f64], targets: &[f64]) {
-        // Rétropropagation du gradient pour ajuster les poids
-
-        // Calcul de l'erreur de la couche de sortie
-        let output_layer = self.layers.last_mut().unwrap();
-
-        for (neuron, &target) in output_layer.neurons.iter_mut().zip(targets.iter()) {
-            let output = neuron.output;
-            neuron.delta = output * (1.0 - output) * (target - output);
-        }
-
-        // Calcul de l'erreur pour les couches cachées en remontant
-        for layer_idx in (1..self.layers.len() - 1).rev() {
-            let current_layer = &mut self.layers[layer_idx];
-            let next_layer = &self.layers[layer_idx + 1];
-
-            for (neuron_idx, neuron) in current_layer.neurons.iter_mut().enumerate() {
-                let output = neuron.output;
-                let mut error = 0.0;
-
-                for next_neuron in next_layer.neurons.iter() {
-                    error += next_neuron.weights[neuron_idx] * next_neuron.delta;
-                }
-
-                neuron.delta = output * (1.0 - output) * error;
-            }
-        }
-
-        // Mise à jour des poids et des biais
-        for layer_idx in 1..self.layers.len() {
-            let current_layer = &mut self.layers[layer_idx];
-            let prev_layer = &self.layers[layer_idx - 1];
-
-            for neuron in current_layer.neurons.iter_mut() {
-                for (weight, delta) in neuron.weights.iter_mut().zip(prev_layer.neurons.iter().map(|neuron| neuron.output)) {
-                    *weight += self.learning_rate * delta * neuron.delta;
-                }
-
-                neuron.bias += self.learning_rate * neuron.delta;
-            }
-        }
-    }
-
-    fn train(&mut self, inputs: &[Vec<f64>], targets: &[Vec<f64>], epochs: usize) {
-        // Entraînement du PMC
-
-        for epoch in 0..epochs {
-            let mut error = 0.0;
-
-            for (input, target) in inputs.iter().zip(targets.iter()) {
-                self.feed_forward(input);
-                self.backpropagate(input, target);
-
-                for (output, &expected) in self.layers.last().unwrap().neurons.iter().map(|neuron| neuron.output).zip(target.iter()) {
-                    error += (output - expected).powi(2);
-                }
-            }
-
-            error /= inputs.len() as f64;
-
-            if epoch % 100 == 0 {
-                println!("Epoch: {}, Error: {}", epoch, error);
-            }
-        }
-    }
-
-    fn predict(&mut self, input: &[f64]) -> Vec<f64> {
-        // Prédiction à partir des entrées fournies
-
-        self.feed_forward(input);
-
-        self.layers.last().unwrap().neurons.iter().map(|neuron| neuron.output).collect()
-    }
+    Array2::from_shape_vec((rows, cols), data).unwrap()
 }
 
-// Fonction pour charger une image et la convertir en vecteur d'attributs
-fn load_image(path: &str) -> Vec<f64> {
-    let img = image::open(path).expect("Failed to open image");
-    let resized_img = img.resize_exact(32, 32, image::imageops::FilterType::Triangle);
-    let grayscale_img = resized_img.grayscale();
 
-    let mut attributes = Vec::new();
+impl MLP {
+    fn new(input_size: usize, hidden_size: usize, output_size: usize) -> Self {
+        let weights1 = random_array(input_size, hidden_size, -1., 1.);
 
-    for (_, _, pixel) in grayscale_img.pixels() {
-        let pixel_value = pixel[0] as f64 / 255.0;
-        attributes.push(pixel_value);
+        let weights2 = random_array(input_size, output_size, -1., 1.);
+
+        //  let weights2 = Array2::random((hidden_size, output_size), Uniform::new(-1., 1.));
+        MLP {
+            input_size,
+            hidden_size,
+            output_size,
+            weights1,
+            weights2,
+        }
     }
 
-    attributes
+    fn sigmoid(x: f64) -> f64 {
+        1. / (1. + std::f64::consts::E.powf(-x))
+    }
+
+    fn sigmoid_derivative(x: f64) -> f64 {
+        x * (1. - x)
+    }
+
+    fn forward(&self, input: &Array2<f64>) -> (Array2<f64>, Array2<f64>) {
+        let hidden = input.dot(&self.weights1).mapv(Self::sigmoid);
+        let output = hidden.dot(&self.weights2).mapv(Self::sigmoid);
+        (hidden, output)
+    }
+
+    fn train(&mut self, input: &Array2<f64>, target_output: &Array2<f64>, iterations: usize) {
+        for _ in 0..iterations {
+            let (hidden, output) = self.forward(input);
+            let output_error = target_output - &output;
+            let d_output = output_error * output.mapv(Self::sigmoid_derivative);
+            let hidden_error = d_output.dot(&self.weights2.t());
+            let d_hidden = hidden_error * hidden.mapv(Self::sigmoid_derivative);
+            self.weights1.assign(&(self.weights1.clone() + input.t().dot(&d_hidden)));
+            self.weights2.assign(&(self.weights2.clone() + hidden.t().dot(&d_output)));
+            /*
+                        self.weights1.assign(&(self.weights1 + input.t().dot(&d_hidden)));
+                        self.weights2.assign(&(self.weights2 + hidden.t().dot(&d_output)));
+            */
+        }
+    }
 }
 
 fn main() {
-    // Chargement des images à partir des dossiers
-    let triste_dir = "C:\\Users\\Sarah\\OneDrive\\Bureau\\PA\\dataset\\sad";
-    let heureux_dir = "C:\\Users\\Sarah\\OneDrive\\Bureau\\PA\\dataset\\heureux";
-    let colere_dir = "C:\\Users\\Sarah\\OneDrive\\Bureau\\PA\\dataset\\colere";
+    println!("ceci est le pmc");
+    // Préparation des données
+    let triste_dir = Path::new("C:\\Users\\Sarah\\OneDrive\\Bureau\\PAIABD\\Projet-Annuel\\dataset\\sad");
+    let heureux_dir = Path::new("C:\\Users\\Sarah\\OneDrive\\Bureau\\PAIABD\\Projet-Annuel\\dataset\\happy");
+    let colere_dir = Path::new("C:\\Users\\Sarah\\OneDrive\\Bureau\\PAIABD\\Projet-Annuel\\dataset\\engry");
 
-    let mut inputs = Vec::new();
-    let mut targets = Vec::new();
+    let (input_data, output_data) = prepare_data(triste_dir, heureux_dir, colere_dir);
 
-    for entry in fs::read_dir(triste_dir).expect("Failed to read image directory") {
-        if let Ok(entry) = entry {
-            let path = entry.path();
-            let attributes = load_image(&path.to_string_lossy());
-            inputs.push(attributes);
-            targets.push(vec![1.0, 0.0, 0.0]); // Triste
-        }
-    }
-
-    for entry in fs::read_dir(heureux_dir).expect("Failed to read image directory") {
-        if let Ok(entry) = entry {
-            let path = entry.path();
-            let attributes = load_image(&path.to_string_lossy());
-            inputs.push(attributes);
-            targets.push(vec![0.0, 1.0, 0.0]); // Heureux
-        }
-    }
-
-    for entry in fs::read_dir(colere_dir).expect("Failed to read image directory") {
-        if let Ok(entry) = entry {
-            let path = entry.path();
-            let attributes = load_image(&path.to_string_lossy());
-            inputs.push(attributes);
-            targets.push(vec![0.0, 0.0, 1.0]); // Colère
-        }
-    }
-
-    // Création du PMC avec une couche cachée de 4 neurones
-    let mut mlp = MultiLayerPerceptron::new(32 * 32, vec![4], 3, 0.1);
-
-    // Entraînement du PMC
-    mlp.train(&inputs, &targets, 1000);
+    // Création et entraînement du perceptron multicouche
+    let input_size = input_data.ncols();
+    let hidden_size = 10;
+    let output_size = 3;
+    let mut mlp = MLP::new(input_size, hidden_size, output_size);
+    mlp.train(&input_data, &output_data, 10000);
 
     // Prédiction pour une nouvelle image
-    let new_image_path = "C:\\Users\\Sarah\\OneDrive\\Bureau\\PA\\src\\sad.jpg";
-    let new_attributes = load_image(new_image_path);
-    let prediction = mlp.predict(&new_attributes);
+    let new_image_path = Path::new("C:\\Users\\Sarah\\OneDrive\\Bureau\\PAIABD\\Projet-Annuel\\src\\sad.jpg");
+    let new_image = ImageReader::open(new_image_path)
+        .unwrap()
+        .decode()
+        .unwrap()
+        .into_luma8();
+    let (width, height) = new_image.dimensions();
+    let new_image = new_image.into_raw();
+    let new_image =
+        Array2::from_shape_vec((height as usize, width as usize), new_image).unwrap();
+    let new_image = new_image.mapv(|x| x as f64 / 255.);
+    let new_image = new_image.into_shape(input_size).unwrap();
+
+
+    //   let new_image = new_image.into_shape((height as usize, width as usize)).unwrap();
+    let new_image = new_image.into_shape((height as usize, width as usize)).unwrap();
+
+    let (_, prediction) = mlp.forward(&new_image);
     println!("Prediction: {:?}", prediction);
+
+
 }

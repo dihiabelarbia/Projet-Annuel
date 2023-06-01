@@ -19,3 +19,5 @@ ndarray-rand = "0.14.0"
 rulinalg = "0.4.2"
 imageproc = "0.23.0"
 indicatif = "0.17.3"
+
+
