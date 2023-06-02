@@ -8,182 +8,265 @@ use std::fs;
 use std::time::Instant;
 use image::imageops::FilterType;
 
-use ndarray::{Array2, Array3, Axis};
-use image::io::Reader as ImageReader;
-use image::GrayImage;
-use std::path::Path;
-use ndarray_rand::{RandomExt, rand_distr::Uniform};
+use rand::Rng;//onimportelalibrairierandpourfairedesrandom
 
+//use serde::{Deserialize, Serialize};
+//use serde_json::{from_str, json};
 
-// Fonction pour lire les images du dataset et les convertir en Array2<f64>
-#[no_mangle]
-pub extern "C"  fn read_images_from_dir(dir: &Path) -> Vec<Array2<f64>> {
-    let mut images = Vec::new();
-    for entry in dir.read_dir().expect("read_dir call failed") {
-        if let Ok(entry) = entry {
-            let img = ImageReader::open(entry.path())
-                .unwrap()
-                .decode()
-                .unwrap()
-                .into_luma8();
-            let (width, height) = img.dimensions();
-            let img = img.into_raw();
-            let img = Array2::from_shape_vec((height as usize, width as usize), img).unwrap();
-            let img = img.mapv(|x| x as f64 / 255.);
-            images.push(img);
-        }
-    }
-    images
+//use super::{activations::Activation, matrice::matrice};
+
+// premierement , pour les test on fait une struct matrice
+pub struct matrice{
+    pub data: Vec<Vec<f64>>, // data est un vecteur de vecteur de f64
+    pub colonne: usize,
+    pub ligne: usize,
 }
 
-#[no_mangle]
-pub extern "C" fn prepare_data(
-    triste_dir: &Path,
-    heureux_dir: &Path,
-    colere_dir: &Path,
-) -> (Array2<f64>, Array2<f64>) {
-    let triste_images = read_images_from_dir(triste_dir);
-    let heureux_images = read_images_from_dir(heureux_dir);
-    let colere_images = read_images_from_dir(colere_dir);
-
-    let n_samples = triste_images.len() + heureux_images.len() + colere_images.len();
-    let n_features = triste_images[0].len();
-
-    let mut input_data = Array2::zeros((n_samples, n_features));
-    let mut output_data = Array2::zeros((n_samples, 3));
-
-    for (i, img) in triste_images.iter().enumerate() {
-        input_data.row_mut(i).assign(&img.view().into_shape(n_features).unwrap());
-        output_data[(i, 0)] = 1.;
-    }
-
-    for (i, img) in heureux_images.iter().enumerate() {
-        input_data
-            .row_mut(i + triste_images.len())
-            .assign(&img.view().into_shape(n_features).unwrap());
-        output_data[(i + triste_images.len(), 1)] = 1.;
-    }
-
-    for (i, img) in colere_images.iter().enumerate() {
-        input_data
-            .row_mut(i + triste_images.len() + heureux_images.len())
-            .assign(&img.view().into_shape(n_features).unwrap());
-        output_data[(i + triste_images.len() + heureux_images.len(), 2)] = 1.;
-    }
-
-    (input_data, output_data)
-}
-
-
-#[derive(Debug)]
-struct MLP {
-    input_size: usize,
-    hidden_size: usize,
-    output_size: usize,
-    weights1: Array2<f64>,
-    weights2: Array2<f64>,
-}
-
-use rand::Rng;
-
-#[no_mangle]
-pub extern "C"  fn random_array(rows: usize, cols: usize, low: f64, high: f64) -> Array2<f64> {
-    let mut rng = rand::thread_rng();
-    let mut data = Vec::with_capacity(rows * cols);
-    for _ in 0..rows * cols {
-        data.push(rng.gen_range(low..high));
-    }
-    Array2::from_shape_vec((rows, cols), data).unwrap()
-}
-
-
-impl MLP {
-    fn new(input_size: usize, hidden_size: usize, output_size: usize) -> Self {
-        let weights1 = random_array(input_size, hidden_size, -1., 1.);
-
-        let weights2 = random_array(input_size, output_size, -1., 1.);
-
-        //  let weights2 = Array2::random((hidden_size, output_size), Uniform::new(-1., 1.));
-        MLP {
-            input_size,
-            hidden_size,
-            output_size,
-            weights1,
-            weights2,
+// specifier les caracteristique de matrice
+impl matrice {
+    pub fn zeros(colonne: usize, ligne: usize) -> matrice {
+        matrice {
+            data: vec![vec![0.0; colonne]; ligne], // vec![vec![0.0; colonne]; ligne] est un vecteur de vecteur de 0.0
+            colonne,
+            ligne,
         }
     }
 
-    fn sigmoid(x: f64) -> f64 {
-        1. / (1. + std::f64::consts::E.powf(-x))
+    // une fonctions qui fait les random de matrice de zero et pour chaque element on genere des élement  entre -1 et 1
+    pub fn random(colonne: usize, ligne: usize) -> matrice {
+        let mut rng = rand::thread_rng(); // on fait un random
+        let mut res = matrice::zeros(colonne,ligne); // on fait une matrice de 0
+        for i in 0..ligne {
+            for j in 0..colonne {
+                res.data[i][j] = rng.gen::<f64>() * 2.0 - 1.0; // on fait un random entre -1 et 1
+            }
+        }
+        res
     }
 
-    fn sigmoid_derivative(x: f64) -> f64 {
-        x * (1. - x)
+
+    pub fn multiplication (&mut self, other: &matrice) -> matrice {
+
+        //tester si la multiplication de deux matrices est possible
+        if self.colonne != other.ligne {
+            panic!("Multiplication impossible");
+        }
+        let mut res = matrice::zeros(self.colonne, other.ligne);
+
+        //parcurir les deux matrices et faire la multiplication
+        for i in 0..self.ligne {
+            for j in 0..other.colonne {
+                for k in 0..self.colonne {
+                    res.data[i][j] += self.data[i][k] * other.data[k][j];
+                }
+            }
+        }
+        res
     }
 
-    fn forward(&self, input: &Array2<f64>) -> (Array2<f64>, Array2<f64>) {
-        let hidden = input.dot(&self.weights1).mapv(Self::sigmoid);
-        let output = hidden.dot(&self.weights2).mapv(Self::sigmoid);
-        (hidden, output)
+    pub fn add(&mut self , other: &matrice) -> matrice {
+        let mut sum = 0.0;
+
+        //tester si l'addition  de deux matrices est possible
+        if self.colonne != other.colonne || self.ligne != other.ligne {
+            panic!("Addition impossible");
+        }
+        let mut res = matrice::zeros(self.colonne, other.ligne);
+        let mut sum = 0.0;
+        //parcurir les deux matrices et faire la multiplication
+        for i in 0..self.ligne {
+            for j in 0..other.colonne {
+                sum += self.data[i][j] + other.data[i][j];
+                res.data[i][j] = sum;
+            }
+        }
+        res
     }
 
-    #[no_mangle]
-    pub extern "C"   fn train(&mut self, input: &Array2<f64>, target_output: &Array2<f64>, iterations: usize) {
-        for _ in 0..iterations {
-            let (hidden, output) = self.forward(input);
-            let output_error = target_output - &output;
-            let d_output = output_error * output.mapv(Self::sigmoid_derivative);
-            let hidden_error = d_output.dot(&self.weights2.t());
-            let d_hidden = hidden_error * hidden.mapv(Self::sigmoid_derivative);
-            self.weights1.assign(&(self.weights1.clone() + input.t().dot(&d_hidden)));
-            self.weights2.assign(&(self.weights2.clone() + hidden.t().dot(&d_output)));
-            /*
-                        self.weights1.assign(&(self.weights1 + input.t().dot(&d_hidden)));
-                        self.weights2.assign(&(self.weights2 + hidden.t().dot(&d_output)));
-            */
+    //on va faire le produit scalaire de deux matrices
+    pub fn scalaire_multipication(&self, other: &matrice ) -> matrice {
+        let mut sum = 0.0;
+
+        if self.colonne != other.colonne || self.ligne != other.ligne {
+            panic!("Addition impossible");
+        }
+        let mut res = matrice::zeros(self.colonne, other.ligne);
+
+        //parcurir les deux matrices et faire la multiplication
+        for i in 0..self.ligne {
+            for j in 0..other.colonne {
+                sum += self.data[i][j] * other.data[i][j];
+                res.data[i][j] = sum;
+            }
+        }
+        res
+    }
+
+
+
+    //on va faire la soustration de deux matrices
+    pub fn soustraction(&self, other: &matrice ) -> matrice {
+        let mut sum = 0.0;
+
+        if self.colonne != other.colonne || self.ligne != other.ligne {
+            panic!("Addition impossible");
+        }
+        let mut res = matrice::zeros(self.colonne, other.ligne);
+
+        //parcurir les deux matrices et faire la multiplication
+        for i in 0..self.ligne {
+            for j in 0..other.colonne {
+                sum += self.data[i][j] - other.data[i][j];
+                res.data[i][j] = sum;
+            }
+        }
+        res
+    }
+
+    pub fn from(data: Vec<Vec<f64>>) -> matrice {
+        matrice {
+            ligne: data.len(),
+            colonne: data[0].len(),
+            data,
+        }
+    }
+    //on Clone la matrice et on la transforme en iterateur et pour chaque valeur on le collect
+    pub fn map(&self, function: &dyn Fn(f64) -> f64) -> matrice {
+        matrice::from(
+            (self.data)
+                .clone()
+                .into_iter()
+                .map(|ligne| ligne.into_iter().map(|value| function(value)).collect())
+                .collect(),
+        )
+    }
+
+    //on fait la transposé de la matrice
+    pub fn ma_trspose(&self) -> matrice {
+        let mut res = matrice::zeros(self.ligne, self.colonne);
+        for i in 0..self.ligne {
+            for j in 0..self.colonne {
+                res.data[j][i] = self.data[i][j];
+            }
+        }
+        res
+    }
+
+
+}
+
+
+
+
+//on va faire la fonction d'acctivation sigmoid
+ pub struct Activation<'a> {
+    pub fonction: &'a dyn Fn(f64) -> f64,
+    pub derivee: &'a dyn Fn(f64) -> f64,
+}
+pub const SIGMOIDD: Activation = Activation {
+    fonction: &|x| 1.0 / (1.0 + (-x).exp()),
+    derivee: &|x| x * (1.0 - x),
+};
+
+impl Clone for matrice {
+    fn clone(&self) -> Self {
+        Self {
+            data: self.data.clone(),
+            colonne: self.colonne,
+            ligne: self.ligne,
         }
     }
 }
 
-#[no_mangle]
-pub extern "C"  fn main() {
-    // Préparation des données
-    let triste_dir = Path::new("C:\\Users\\Sarah\\IdeaProjects\\pmc\\Triste");
-    let heureux_dir = Path::new("C:\\Users\\Sarah\\IdeaProjects\\pmc\\heureux");
-    let colere_dir = Path::new("C:\\Users\\Sarah\\IdeaProjects\\pmc\\en colère");
-
-    let (input_data, output_data) = prepare_data(triste_dir, heureux_dir, colere_dir);
-
-    // Création et entraînement du perceptron multicouche
-    let input_size = input_data.ncols();
-    let hidden_size = 10;
-    let output_size = 3;
-    let mut mlp = MLP::new(input_size, hidden_size, output_size);
-    mlp.train(&input_data, &output_data, 10000);
-
-    // Prédiction pour une nouvelle image
-    let new_image_path = Path::new("C:\\Users\\Sarah\\IdeaProjects\\pmc\\vue-laterale-fille-souriante-interieur_23-2149541875.jpg");
-    let new_image = ImageReader::open(new_image_path)
-        .unwrap()
-        .decode()
-        .unwrap()
-        .into_luma8();
-    let (width, height) = new_image.dimensions();
-    let new_image = new_image.into_raw();
-    let new_image =
-        Array2::from_shape_vec((height as usize, width as usize), new_image).unwrap();
-    let new_image = new_image.mapv(|x| x as f64 / 255.);
-    let new_image = new_image.into_shape(input_size).unwrap();
-
-
-    //   let new_image = new_image.into_shape((height as usize, width as usize)).unwrap();
-    let new_image = new_image.into_shape((height as usize, width as usize)).unwrap();
-
-    let (_, prediction) = mlp.forward(&new_image);
-    println!("Prediction: {:?}", prediction);
-
-
+//on va implémenter le reseau de neuronne
+ pub struct reseau<'a> {
+    poids: Vec<matrice>, // on va stocker les poids du reseau
+    couche: Vec<usize>, // on va stocker les couches du reseau
+    data: Vec<matrice>, // on va stocker les données du reseau
+    learning_rate: f64, // on va stocker le learning rate du reseau
+    biais: Vec<matrice>, // on va stocker les biais du reseau
+    fct_activation : Activation<'a>
 }
+
+
+ impl reseau<'_> {
+    pub fn new<'a>(couche: Vec<usize>, learning_rate: f64, fct_activation: Activation<'a>) -> reseau {
+        let mut poids = vec![];
+        let mut biais = vec![];
+        for s in 0..couche.len() - 1 {
+            poids.push(matrice::random(couche[s], couche[s + 1]));
+            biais.push(matrice::random(1, couche[s + 1]));
+        }
+        reseau {
+            poids,
+            couche,
+            data: vec![], // on va stocker les données du reseau
+            biais,
+            fct_activation,
+            learning_rate,
+        }
+    }
+
+    pub fn feed_forward(&mut self, entree: Vec<f64>) -> Vec<f64> {
+        if entree.len() != self.couche[0] {
+            panic!("l'entrée != couche[0]");
+        }
+        let mut current = matrice::from(vec![entree]).ma_trspose();
+        self.data = vec![current.clone()];
+
+        for i in 0..self.couche.len() - 1 {
+            current = self.poids[i]
+                .multiplication(&current)
+                .add(&self.biais[i])
+                .map(self.fct_activation.fonction);
+            self.data.push(current.clone());
+        }
+        current.data[0].to_owned()  // on retourne la derniere couche c'est quoi to_owned ?
+    }
+
+
+    //oh tu t'es trompé de résultat ??  c une fonction de prediction
+    //ceci est une fonctions qui va nous permettre de faire la propagation, et de dire si a la fin on a un bon resultat ou pas
+    //et si on a des erreur de prediction
+
+    pub fn back_propogate(&mut self, sorties: Vec<f64>, targets: Vec<f64>) {
+        if targets.len() != self.couche[self.couche.len() - 1] {
+            panic!("taille de la target incorrecte");
+        }
+
+        let parsed = matrice::from(vec![sorties]).ma_trspose();
+        let mut erreur = matrice::from(vec![targets]).ma_trspose().soustraction(&parsed);
+        //on fait la derivee de la fonction d'activation
+        let mut gradients = parsed.map(self.fct_activation.derivee);
+
+
+        for i in (0..self.couche.len() - 1).rev() {
+            gradients = gradients
+                .scalaire_multipication(&erreur)
+                .map(&|x| x * self.learning_rate);
+
+            self.poids[i] = self.poids[i].add(&gradients.multiplication(&self.data[i].ma_trspose())); // the diff between what was expected and the output
+            self.biais[i] = self.biais[i].add(&gradients);
+
+            erreur = self.poids[i].ma_trspose().multiplication(&erreur);
+            gradients = self.data[i].map(self.fct_activation.derivee);
+        }
+    }
+    pub fn train(&mut self, entree: Vec<Vec<f64>>, targets: Vec<Vec<f64>>, iterations: u16) {
+        for i in 1..=iterations {
+            if iterations < 100 || i % (iterations / 100) == 0 {
+                println!("Epoch {} of {}", i, iterations);
+            }
+            for j in 0..entree.len() {
+                let sortie = self.feed_forward(entree[j].clone());
+                self.back_propogate(sortie, targets[j].clone());
+            }
+        }
+    }
+}
+
+
+
 
 //MODELE LINEAIRES
 // Définition de certaines constantes qui seront utilisées dans le reste du programme
@@ -313,4 +396,3 @@ pub extern "C" fn test_model(images: &[Vec<f32>], weights: &[Vec<f32>], num_clas
 pub extern "C" fn my_add(a: i32, b: i32) -> i32 {
     a + b
 }
-
