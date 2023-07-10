@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 {"rustc":3249269541886640494,"features":"[\"extern_crate_alloc\"]","target":15295123418435159834,"profile":6269190295429226618,"path":482758747336619747,"deps":[],"local":[{"CheckDepInfo":{"dep_info":"release\\.fingerprint\\bytemuck-143ec43b3e796d30\\dep-lib-bytemuck"}}],"rustflags":[],"metadata":5417891915809776353,"config":2202906307356721367,"compile_kind":0}
+=======
+{"rustc":3249269541886640494,"features":"[\"extern_crate_alloc\"]","target":15295123418435159834,"profile":6269190295429226618,"path":13816602208871966668,"deps":[],"local":[{"CheckDepInfo":{"dep_info":"release\\.fingerprint\\bytemuck-143ec43b3e796d30\\dep-lib-bytemuck"}}],"rustflags":[],"metadata":5417891915809776353,"config":2202906307356721367,"compile_kind":0}
+>>>>>>> 199dda4bafb9ccfaad99f4f3118679149ba9f719

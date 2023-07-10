@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 {"rustc":3249269541886640494,"features":"","target":0,"profile":0,"path":0,"deps":[[12780934265232043015,"build_script_build",false,9547764807871088184]],"local":[{"RerunIfChanged":{"output":"release\\build\\crossbeam-epoch-010bd6e2a044c4b5\\output","paths":["no_atomic.rs"]}}],"rustflags":[],"metadata":0,"config":0,"compile_kind":0}
+=======
+{"rustc":3249269541886640494,"features":"","target":0,"profile":0,"path":0,"deps":[[12780934265232043015,"build_script_build",false,14690450626717258936]],"local":[{"RerunIfChanged":{"output":"release\\build\\crossbeam-epoch-010bd6e2a044c4b5\\output","paths":["no_atomic.rs"]}}],"rustflags":[],"metadata":0,"config":0,"compile_kind":0}
+>>>>>>> 199dda4bafb9ccfaad99f4f3118679149ba9f719

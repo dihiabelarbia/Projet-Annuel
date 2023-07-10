@@ -1,3 +1,8 @@
 cargo:rerun-if-changed=build/main.rs
+<<<<<<< HEAD
 cargo:rustc-env=TYPENUM_BUILD_CONSTS=C:\Users\dbelarbia\ESGI\pa\Projet-Annuel\target\release\build\typenum-254141834622607e\out\consts.rs
 cargo:rustc-env=TYPENUM_BUILD_OP=C:\Users\dbelarbia\ESGI\pa\Projet-Annuel\target\release\build\typenum-254141834622607e\out\op.rs
+=======
+cargo:rustc-env=TYPENUM_BUILD_CONSTS=C:\Users\Sarah\OneDrive\Bureau\PAIABD\Projet-Annuel\target\release\build\typenum-254141834622607e\out\consts.rs
+cargo:rustc-env=TYPENUM_BUILD_OP=C:\Users\Sarah\OneDrive\Bureau\PAIABD\Projet-Annuel\target\release\build\typenum-254141834622607e\out\op.rs
+>>>>>>> 199dda4bafb9ccfaad99f4f3118679149ba9f719

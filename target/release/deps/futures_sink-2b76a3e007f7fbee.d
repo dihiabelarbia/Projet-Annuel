@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 C:\Users\dbelarbia\ESGI\pa\Projet-Annuel\target\release\deps\futures_sink-2b76a3e007f7fbee.rmeta: C:\Users\dbelarbia\.cargo\registry\src\github.com-1ecc6299db9ec823\futures-sink-0.3.28\src\lib.rs
 
 C:\Users\dbelarbia\ESGI\pa\Projet-Annuel\target\release\deps\libfutures_sink-2b76a3e007f7fbee.rlib: C:\Users\dbelarbia\.cargo\registry\src\github.com-1ecc6299db9ec823\futures-sink-0.3.28\src\lib.rs
@@ -5,3 +6,12 @@ C:\Users\dbelarbia\ESGI\pa\Projet-Annuel\target\release\deps\libfutures_sink-2b7
 C:\Users\dbelarbia\ESGI\pa\Projet-Annuel\target\release\deps\futures_sink-2b76a3e007f7fbee.d: C:\Users\dbelarbia\.cargo\registry\src\github.com-1ecc6299db9ec823\futures-sink-0.3.28\src\lib.rs
 
 C:\Users\dbelarbia\.cargo\registry\src\github.com-1ecc6299db9ec823\futures-sink-0.3.28\src\lib.rs:
+=======
+C:\Users\Sarah\OneDrive\Bureau\PA\target\release\deps\futures_sink-2b76a3e007f7fbee.rmeta: C:\Users\Sarah\.cargo\registry\src\github.com-1ecc6299db9ec823\futures-sink-0.3.28\src\lib.rs
+
+C:\Users\Sarah\OneDrive\Bureau\PA\target\release\deps\libfutures_sink-2b76a3e007f7fbee.rlib: C:\Users\Sarah\.cargo\registry\src\github.com-1ecc6299db9ec823\futures-sink-0.3.28\src\lib.rs
+
+C:\Users\Sarah\OneDrive\Bureau\PA\target\release\deps\futures_sink-2b76a3e007f7fbee.d: C:\Users\Sarah\.cargo\registry\src\github.com-1ecc6299db9ec823\futures-sink-0.3.28\src\lib.rs
+
+C:\Users\Sarah\.cargo\registry\src\github.com-1ecc6299db9ec823\futures-sink-0.3.28\src\lib.rs:
+>>>>>>> 199dda4bafb9ccfaad99f4f3118679149ba9f719

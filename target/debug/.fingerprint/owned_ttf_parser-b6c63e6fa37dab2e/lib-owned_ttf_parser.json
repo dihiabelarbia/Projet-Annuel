@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 {"rustc":3249269541886640494,"features":"[\"apple-layout\", \"default\", \"glyph-names\", \"opentype-layout\", \"std\", \"variable-fonts\"]","target":10941848317852224958,"profile":3735503092003429423,"path":230918430460142580,"deps":[[7645209833378549437,"ttf_parser",false,3015067168858822324]],"local":[{"CheckDepInfo":{"dep_info":"debug\\.fingerprint\\owned_ttf_parser-b6c63e6fa37dab2e\\dep-lib-owned_ttf_parser"}}],"rustflags":[],"metadata":16107028734103037865,"config":2202906307356721367,"compile_kind":0}
+=======
+{"rustc":3249269541886640494,"features":"[\"apple-layout\", \"default\", \"glyph-names\", \"opentype-layout\", \"std\", \"variable-fonts\"]","target":10941848317852224958,"profile":3735503092003429423,"path":10335565377608773525,"deps":[[7645209833378549437,"ttf_parser",false,11581320202582727308]],"local":[{"CheckDepInfo":{"dep_info":"debug\\.fingerprint\\owned_ttf_parser-b6c63e6fa37dab2e\\dep-lib-owned_ttf_parser"}}],"rustflags":[],"metadata":16107028734103037865,"config":2202906307356721367,"compile_kind":0}
+>>>>>>> 199dda4bafb9ccfaad99f4f3118679149ba9f719

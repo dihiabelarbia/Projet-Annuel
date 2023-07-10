@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 {"rustc":3249269541886640494,"features":"[\"alloc\", \"default\", \"std\"]","target":4470887328351089203,"profile":6269190295429226618,"path":6617127309290338951,"deps":[],"local":[{"CheckDepInfo":{"dep_info":"release\\.fingerprint\\half-86800deec65533b7\\dep-lib-half"}}],"rustflags":[],"metadata":576232026459312637,"config":2202906307356721367,"compile_kind":0}
+=======
+{"rustc":3249269541886640494,"features":"[\"alloc\", \"default\", \"std\"]","target":4470887328351089203,"profile":6269190295429226618,"path":14220145300015211784,"deps":[],"local":[{"CheckDepInfo":{"dep_info":"release\\.fingerprint\\half-86800deec65533b7\\dep-lib-half"}}],"rustflags":[],"metadata":576232026459312637,"config":2202906307356721367,"compile_kind":0}
+>>>>>>> 199dda4bafb9ccfaad99f4f3118679149ba9f719
