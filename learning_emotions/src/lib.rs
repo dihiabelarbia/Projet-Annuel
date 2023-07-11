@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 
 
 extern crate image;
@@ -351,20 +350,20 @@ pub unsafe extern "C" fn network_predict(network: *mut Network, inputs: Vec<f32>
 pub extern "C" fn init_network(sizes: *const usize, len: usize) -> *mut Network {
     let sizes = unsafe { slice::from_raw_parts(sizes, len) };
     let network = Network::new(sizes);
-    Box::into_raw(Box::new(network))
-=======
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+    Box::into_raw(Box::new(network));
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+    pub fn add(left: usize, right: usize) -> usize {
+        left + right
     }
->>>>>>> 199dda4bafb9ccfaad99f4f3118679149ba9f719
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn it_works() {
+            let result = add(2, 2);
+            assert_eq!(result, 4);
+        }
+    }
 }
