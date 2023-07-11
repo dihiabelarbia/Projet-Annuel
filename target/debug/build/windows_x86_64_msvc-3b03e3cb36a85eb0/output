@@ -1,5 +1,1 @@
-<<<<<<< HEAD
 cargo:rustc-link-search=native=C:\Users\dbelarbia\.cargo\registry\src\github.com-1ecc6299db9ec823\windows_x86_64_msvc-0.42.2\lib
-=======
-cargo:rustc-link-search=native=C:\Users\Sarah\.cargo\registry\src\github.com-1ecc6299db9ec823\windows_x86_64_msvc-0.42.2\lib
->>>>>>> 199dda4bafb9ccfaad99f4f3118679149ba9f719

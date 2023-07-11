@@ -1,5 +1,1 @@
-<<<<<<< HEAD
 {"rustc":3249269541886640494,"features":"[\"default\", \"proc-macro\"]","target":2297296889237502566,"profile":9753404505428345930,"path":16695064667763636050,"deps":[],"local":[{"CheckDepInfo":{"dep_info":"debug\\.fingerprint\\proc-macro2-8364e513624cdd43\\dep-build-script-build-script-build"}}],"rustflags":[],"metadata":7635439851376710101,"config":2202906307356721367,"compile_kind":0}
-=======
-{"rustc":3249269541886640494,"features":"[\"default\", \"proc-macro\"]","target":2297296889237502566,"profile":9753404505428345930,"path":17493401450644887851,"deps":[],"local":[{"CheckDepInfo":{"dep_info":"debug\\.fingerprint\\proc-macro2-8364e513624cdd43\\dep-build-script-build-script-build"}}],"rustflags":[],"metadata":7635439851376710101,"config":2202906307356721367,"compile_kind":0}
->>>>>>> 199dda4bafb9ccfaad99f4f3118679149ba9f719

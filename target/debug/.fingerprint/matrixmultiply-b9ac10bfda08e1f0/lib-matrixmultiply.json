@@ -1,5 +1,1 @@
-<<<<<<< HEAD
 {"rustc":3249269541886640494,"features":"[\"cgemm\", \"default\", \"std\"]","target":11175093895193181225,"profile":3735503092003429423,"path":15445823137662033882,"deps":[[6812601799168873613,"build_script_build",false,16826012504588634917],[8971881361536789886,"rawpointer",false,10783863043373726528]],"local":[{"CheckDepInfo":{"dep_info":"debug\\.fingerprint\\matrixmultiply-b9ac10bfda08e1f0\\dep-lib-matrixmultiply"}}],"rustflags":[],"metadata":813044034027789680,"config":2202906307356721367,"compile_kind":0}
-=======
-{"rustc":3249269541886640494,"features":"[\"cgemm\", \"default\", \"std\"]","target":11175093895193181225,"profile":3735503092003429423,"path":13247077777632616356,"deps":[[6812601799168873613,"build_script_build",false,9657045453729302414],[8971881361536789886,"rawpointer",false,7486326390366725466]],"local":[{"CheckDepInfo":{"dep_info":"debug\\.fingerprint\\matrixmultiply-b9ac10bfda08e1f0\\dep-lib-matrixmultiply"}}],"rustflags":[],"metadata":813044034027789680,"config":2202906307356721367,"compile_kind":0}
->>>>>>> 199dda4bafb9ccfaad99f4f3118679149ba9f719

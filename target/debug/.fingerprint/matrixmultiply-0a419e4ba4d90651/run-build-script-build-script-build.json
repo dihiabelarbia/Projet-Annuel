@@ -1,5 +1,1 @@
-<<<<<<< HEAD
 {"rustc":3249269541886640494,"features":"","target":0,"profile":0,"path":0,"deps":[[6812601799168873613,"build_script_build",false,2464045881480730585]],"local":[{"RerunIfChanged":{"output":"debug\\build\\matrixmultiply-0a419e4ba4d90651\\output","paths":["build.rs"]}}],"rustflags":[],"metadata":0,"config":0,"compile_kind":0}
-=======
-{"rustc":3249269541886640494,"features":"","target":0,"profile":0,"path":0,"deps":[[6812601799168873613,"build_script_build",false,16645156716788504121]],"local":[{"RerunIfChanged":{"output":"debug\\build\\matrixmultiply-0a419e4ba4d90651\\output","paths":["build.rs"]}}],"rustflags":[],"metadata":0,"config":0,"compile_kind":0}
->>>>>>> 199dda4bafb9ccfaad99f4f3118679149ba9f719

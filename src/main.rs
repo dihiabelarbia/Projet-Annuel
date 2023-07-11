@@ -86,7 +86,7 @@ fn flatten_images(images: Vec<DynamicImage>) -> Vec<Vec<f32>> {
 
     flattened_images
 }
-/*
+
 fn train_linear_regression_model(
     x_ptr: *const f32,
     y_ptr: *const f32,
@@ -227,69 +227,6 @@ fn test_model(images: &[Vec<f32>], weights: &[Vec<f32>], num_classes: usize) -> 
     accuracy
 }
 
-// Fonction principale
-fn main() {
-
-    // Chargement des images pour chaque classe
-    let triste_images = load_images_from_folder("C:\\Users\\dbelarbia\\ESGI\\pa\\Projet-Annuel\\dataset\\sad");
-    let heureux_images = load_images_from_folder("C:\\Users\\dbelarbia\\ESGI\\pa\\Projet-Annuel\\dataset\\happy");
-    let enerve_images = load_images_from_folder("C:\\Users\\dbelarbia\\ESGI\\pa\\Projet-Annuel\\dataset\\engry");
-
-
-    // Redimensionnement des images
-    let triste_resized = resize_images(triste_images, IMAGE_WIDTH, IMAGE_HEIGHT);
-    let heureux_resized = resize_images(heureux_images, IMAGE_WIDTH, IMAGE_HEIGHT );
-    let enerve_resized = resize_images(enerve_images, IMAGE_WIDTH, IMAGE_HEIGHT);
-
-    // Conversion des images en vecteurs de pixels
-    let triste_flattened = flatten_images(triste_resized);
-    let heureux_flattened = flatten_images(heureux_resized);
-    let enerve_flattened = flatten_images(enerve_resized);
-
-    // Création des étiquettes pour chaque classe
-    let triste_labels = vec![0; triste_flattened.len()];
-    let heureux_labels = vec![1; heureux_flattened.len()];
-    let enerve_labels = vec![2; enerve_flattened.len()];
-
-    // Concaténation des images et des étiquettes
-    let images: Vec<Vec<f32>> = [
-        triste_flattened,
-        heureux_flattened,
-        enerve_flattened,
-    ]
-        .concat();
-    let labels: Vec<usize> = [
-        triste_labels,
-        heureux_labels,
-        enerve_labels,
-    ]
-        .concat();
-
-    // Initialisation des poids
-    let mut weights = initialize_weights(IMAGE_WIDTH as usize * IMAGE_HEIGHT as usize * 2, NUM_CLASSES);
-
-    // Entraînement du modèle
-    let cloned_images = images.clone();
-    train_model(cloned_images, labels, &mut weights, LEARNING_RATE, NUM_ITERATIONS);
-
-    // Exemple de prédiction d'une nouvelle image
-    let new_image_path = "C:\\Users\\dbelarbia\\ESGI\\pa\\Projet-Annuel\\src\\sad.jpg";
-    let new_image = image::open(new_image_path).expect("Impossible de charger la nouvelle image");
-    let new_resized_image = new_image.resize_exact(IMAGE_WIDTH, IMAGE_HEIGHT, FilterType::Lanczos3);
-    let new_flattened_image = &flatten_images(vec![new_resized_image])[0];
-    let predicted_class = predict_image_class(&new_flattened_image, &weights);
-
-    let start_time = Instant::now();
-
-    let end_time = Instant::now();
-    let execution_time = end_time.duration_since(start_time);
-    let accuracy = test_model(&images, &weights, NUM_CLASSES);
-    println!("Précision du modèle: {}%", accuracy);
-    println!("Temps d'exécution: {:?}", execution_time);
-    println!("Classe prédite: {}", predicted_class);
-
-}*/
-
 use rand::Rng;
 use ndarray::{Array, Array2, arr2};
 use ndarray_rand::RandomExt;
@@ -357,8 +294,9 @@ impl Layer {
     fn backward(&mut self, errors: &Vec<f32>, learning_rate: f32) -> Vec<f32> {
         let mut next_errors = vec![0.0; self.neurons[0].weights.len()];
         for (i, neuron) in self.neurons.iter_mut().enumerate() {
-            if i < 9 {
+            if i < 10 {
                 let error = errors[i];
+                println!("{}",error);
                 for (j, weight) in neuron.weights.iter_mut().enumerate() {
                     println!("{} {}", j, weight);
                     *weight += learning_rate * error * self.inputs[j];
@@ -479,8 +417,53 @@ fn main() {
     let heureux_flattened = flatten_images(heureux_resized);
     let enerve_flattened = flatten_images(enerve_resized);
     println!("here3");
+
+    //linéaire teste
+    // Création des étiquettes pour chaque classe
+    let triste_labels = vec![0; triste_flattened.len()];
+    let heureux_labels = vec![1; heureux_flattened.len()];
+    let enerve_labels = vec![2; enerve_flattened.len()];
+
+    // Concaténation des images et des étiquettes
+    let images: Vec<Vec<f32>> = [
+        triste_flattened,
+        heureux_flattened,
+        enerve_flattened,
+    ]
+        .concat();
+    let labels: Vec<usize> = [
+        triste_labels,
+        heureux_labels,
+        enerve_labels,
+    ]
+        .concat();
+
+    // Initialisation des poids
+    let mut weights = initialize_weights(IMAGE_WIDTH as usize * IMAGE_HEIGHT as usize * 2, NUM_CLASSES);
+
+    // Entraînement du modèle
+    let cloned_images = images.clone();
+    train_model(cloned_images, labels, &mut weights, LEARNING_RATE, NUM_ITERATIONS);
+
+    // Exemple de prédiction d'une nouvelle image
+    let new_image_path = "C:\\Users\\dbelarbia\\ESGI\\pa\\Projet-Annuel\\src\\sad.jpg";
+    let new_image = image::open(new_image_path).expect("Impossible de charger la nouvelle image");
+    let new_resized_image = new_image.resize_exact(IMAGE_WIDTH, IMAGE_HEIGHT, FilterType::Lanczos3);
+    let new_flattened_image = &flatten_images(vec![new_resized_image])[0];
+    let predicted_class = predict_image_class(&new_flattened_image, &weights);
+
+    let start_time = Instant::now();
+
+    let end_time = Instant::now();
+    let execution_time = end_time.duration_since(start_time);
+    let accuracy = test_model(&images, &weights, NUM_CLASSES);
+    println!("Précision du modèle: {}%", accuracy);
+    println!("Temps d'exécution: {:?}", execution_time);
+    println!("Classe prédite: {}", predicted_class);
     // Création du réseau de neurones
-    let mut network = Network::new(&[IMAGE_WIDTH as usize * IMAGE_HEIGHT as usize * 3, 1500, 700, 300, 64, 3]);
+
+    //PMC teste
+    let mut network = Network::new(&[IMAGE_WIDTH as usize * IMAGE_HEIGHT as usize * 3, 1500, 700, 300, 3]);
     println!("here4");
     // Création des étiquettes pour les classes triste, heureuse et enervée
     let triste_labels: Vec<Vec<f32>> = (0..triste_flattened.len()).map(|_| vec![1.0, 0.0, 0.0]).collect();
