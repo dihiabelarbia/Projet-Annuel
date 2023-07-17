@@ -35,10 +35,7 @@ fn load_images_from_folder(folder_path: &str) -> Vec<DynamicImage> {
     }
     images
 }
-//fonction de test dll
-fn my_add(a: i32, b: i32) -> i32 {
-    a + b
-}
+
 
 
 // Fonction pour redimensionner toutes les images à une taille fixe
@@ -402,9 +399,9 @@ fn image_to_vec(image: DynamicImage) -> Vec<f32> {
 }
 
 fn main() {
-    let triste_images = load_images_from_folder("C:\\Users\\dbelarbia\\ESGI\\pa\\Projet-Annuel\\dataset\\sad");
-    let heureux_images = load_images_from_folder("C:\\Users\\dbelarbia\\ESGI\\pa\\Projet-Annuel\\dataset\\happy");
-    let enerve_images = load_images_from_folder("C:\\Users\\dbelarbia\\ESGI\\pa\\Projet-Annuel\\dataset\\engry");
+    let triste_images = load_images_from_folder("C:/Users/Sarah/OneDrive/Bureau/3IABD/Projet-Annuel/dataset/sad");
+    let heureux_images = load_images_from_folder("C:/Users/Sarah/OneDrive/Bureau/3IABD/Projet-Annuel/dataset/happy");
+    let enerve_images = load_images_from_folder("C:/Users/Sarah/OneDrive/Bureau/3IABD/Projet-Annuel/dataset/engry");
     println!("here1");
 
     // Redimensionnement des images
@@ -446,7 +443,7 @@ fn main() {
     train_model(cloned_images, labels, &mut weights, LEARNING_RATE, NUM_ITERATIONS);
 
     // Exemple de prédiction d'une nouvelle image
-    let new_image_path = "C:\\Users\\dbelarbia\\ESGI\\pa\\Projet-Annuel\\src\\sad.jpg";
+    let new_image_path = "heureux.jpeg";
     let new_image = image::open(new_image_path).expect("Impossible de charger la nouvelle image");
     let new_resized_image = new_image.resize_exact(IMAGE_WIDTH, IMAGE_HEIGHT, FilterType::Lanczos3);
     let new_flattened_image = &flatten_images(vec![new_resized_image])[0];
@@ -478,7 +475,7 @@ fn main() {
     println!("here7");
     println!("OK");
     // Chargez votre image ici en utilisant une bibliothèque d'image appropriée
-    let new_image_path = "C:\\Users\\dbelarbia\\ESGI\\pa\\Projet-Annuel\\src\\unnamed4.jpg";
+    let new_image_path = "heureux.jpeg";
     let new_image = image::open(new_image_path).expect("Impossible de charger la nouvelle image");
     let new_resized_image = new_image.resize_exact(IMAGE_WIDTH, IMAGE_HEIGHT, FilterType::Lanczos3);
     let new_flattened_image = &flatten_images(vec![new_resized_image])[0];
